@@ -1,0 +1,17 @@
+[package]
+name = "CT-combiner"
+version = "0.1.0"
+edition = "2021"
+authors = ["Xanthorrhizol <xanthorrhizol@proton.me>"]
+
+[[bin]]
+name = "ct_combiner"
+path = "src/bin/main.rs"
+
+[lib]
+name = "lib"
+path = "src/lib.rs"
+
+[dependencies]
+image = "0.24.3"
+obj = "0.10.2"

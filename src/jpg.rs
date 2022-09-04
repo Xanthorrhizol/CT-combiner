@@ -1,14 +1,5 @@
 const DAMP: u8 = 15;
 
-pub struct Jpg {
-    pub width: u32,
-    pub height: u32,
-    pub red: Vec<u8>,
-    pub green: Vec<u8>,
-    pub blue: Vec<u8>,
-    pub light: Vec<u8>,
-    pub binary: Vec<bool>,
-}
 pub struct JpgOption {
     pub red: f32,
     pub green: f32,
@@ -26,6 +17,16 @@ impl JpgOption {
             brightness,
         }
     }
+}
+
+pub struct Jpg {
+    pub width: u32,
+    pub height: u32,
+    pub red: Vec<u8>,
+    pub green: Vec<u8>,
+    pub blue: Vec<u8>,
+    pub light: Vec<u8>,
+    pub binary: Vec<bool>,
 }
 impl Jpg {
     pub fn new(img: image::DynamicImage) -> Jpg {
@@ -67,20 +68,6 @@ impl Jpg {
         };
         jpg.binary = jpg.get_binary();
         jpg
-    }
-    fn get_binary(&self) -> Vec<bool> {
-        let mut result: Vec<bool> = vec![];
-        let critical_value = self.light.iter().max().unwrap();
-        for y in 0..self.height {
-            for x in 0..self.width {
-                if self.light[self.get_index_from_xy(x, y)] >= critical_value.clone() - DAMP {
-                    result.push(true);
-                } else {
-                    result.push(false);
-                }
-            }
-        }
-        result
     }
     pub fn export_bone(&self, opt: &JpgOption) -> Vec<u8> {
         let mut result: Vec<u8> = vec![];
@@ -168,6 +155,23 @@ impl Jpg {
                     result.push(red);
                     result.push(green);
                     result.push(blue);
+                }
+            }
+        }
+        result
+    }
+
+    // ====== private ====== //
+
+    fn get_binary(&self) -> Vec<bool> {
+        let mut result: Vec<bool> = vec![];
+        let critical_value = self.light.iter().max().unwrap();
+        for y in 0..self.height {
+            for x in 0..self.width {
+                if self.light[self.get_index_from_xy(x, y)] >= critical_value.clone() - DAMP {
+                    result.push(true);
+                } else {
+                    result.push(false);
                 }
             }
         }

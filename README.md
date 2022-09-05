@@ -7,5 +7,7 @@
 
 ## Progress
 
-now I'm trying to get line from bone
-so, the main function is just for test
+- [x] get line from bone
+- [ ] stack each jpg files into obj
+  - [x] only particles
+  - [ ] link with line

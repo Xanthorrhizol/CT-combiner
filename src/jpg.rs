@@ -69,6 +69,32 @@ impl Jpg {
         jpg.binary = jpg.get_binary();
         jpg
     }
+    pub fn export(&self, opt: &JpgOption) -> Vec<u8> {
+        let mut result: Vec<u8> = vec![];
+        if opt.gray_scale {
+            for y in 0..self.height {
+                for x in 0..self.width {
+                    let i = self.get_index_from_xy(x, y);
+                    result.push(self.light[i]);
+                    result.push(self.light[i]);
+                    result.push(self.light[i]);
+                }
+            }
+        } else {
+            for y in 0..self.height {
+                for x in 0..self.width {
+                    let i = self.get_index_from_xy(x, y);
+                    let red = (self.red[i] as f32 * opt.brightness * opt.red).ceil() as u8;
+                    let green = (self.green[i] as f32 * opt.brightness * opt.green).ceil() as u8;
+                    let blue = (self.blue[i] as f32 * opt.brightness * opt.blue).ceil() as u8;
+                    result.push(red);
+                    result.push(green);
+                    result.push(blue);
+                }
+            }
+        }
+        result
+    }
     pub fn export_bone(&self, opt: &JpgOption) -> Vec<u8> {
         let mut result: Vec<u8> = vec![];
         for y in 0..self.height {
@@ -134,29 +160,15 @@ impl Jpg {
             self.binary = result;
         }
     }
-    pub fn export(&self, opt: &JpgOption) -> Vec<u8> {
-        let mut result: Vec<u8> = vec![];
-        if opt.gray_scale {
-            for y in 0..self.height {
-                for x in 0..self.width {
-                    let i = self.get_index_from_xy(x, y);
-                    result.push(self.light[i]);
-                    result.push(self.light[i]);
-                    result.push(self.light[i]);
-                }
+    pub fn get_xy_coords(&self, z: f32) -> Vec<[f32; 3]> {
+        let mut result: Vec<[f32; 3]> = vec![];
+        let mut i = 0;
+        for binary in self.binary.iter() {
+            if *binary {
+                let (x, y) = self.get_xy_from_index(i);
+                result.push([x as f32, z, y as f32]);
             }
-        } else {
-            for y in 0..self.height {
-                for x in 0..self.width {
-                    let i = self.get_index_from_xy(x, y);
-                    let red = (self.red[i] as f32 * opt.brightness * opt.red).ceil() as u8;
-                    let green = (self.green[i] as f32 * opt.brightness * opt.green).ceil() as u8;
-                    let blue = (self.blue[i] as f32 * opt.brightness * opt.blue).ceil() as u8;
-                    result.push(red);
-                    result.push(green);
-                    result.push(blue);
-                }
-            }
+            i += 1;
         }
         result
     }
@@ -179,5 +191,10 @@ impl Jpg {
     }
     fn get_index_from_xy(&self, x: u32, y: u32) -> usize {
         (y * self.width + x) as usize
+    }
+    fn get_xy_from_index(&self, index: u32) -> (u32, u32) {
+        let x = index % self.width;
+        let y = index / self.width;
+        return (x, y);
     }
 }

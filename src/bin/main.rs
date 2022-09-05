@@ -1,48 +1,31 @@
-use lib::jpg::{Jpg, JpgOption};
+use lib::jpg::Jpg;
+use lib::obj::Object;
+use std::env;
+use std::fs;
+use std::process;
 
 const NOISE_CANCEL_COVER_COUNT: u32 = 2;
 const NOISE_CANCEL_ITERATION: u32 = 4;
+const STEP: f32 = 4.0;
 
 fn main() {
-    let img = image::open("img/original.jpg").unwrap();
-    let mut jpg = Jpg::new(img);
-    let opt_gray = JpgOption::new(1.0, 1.0, 1.0, true, 1.0);
-    let opt_green = JpgOption::new(0.0, 1.0, 0.0, false, 1.0);
-    image::save_buffer(
-        "img/gray.jpg",
-        &jpg.export(&opt_gray),
-        jpg.width,
-        jpg.height,
-        image::ColorType::Rgb8,
-    )
-    .unwrap();
-
-    image::save_buffer(
-        "img/green.jpg",
-        &jpg.export(&opt_green),
-        jpg.width,
-        jpg.height,
-        image::ColorType::Rgb8,
-    )
-    .unwrap();
-
-    image::save_buffer(
-        "img/bone.jpg",
-        &jpg.export_bone(&opt_gray),
-        jpg.width,
-        jpg.height,
-        image::ColorType::Rgb8,
-    )
-    .unwrap();
-
-    jpg.remove_noise(NOISE_CANCEL_COVER_COUNT, NOISE_CANCEL_ITERATION);
-
-    image::save_buffer(
-        "img/bone_noise_canceled.jpg",
-        &jpg.export_bone(&opt_gray),
-        jpg.width,
-        jpg.height,
-        image::ColorType::Rgb8,
-    )
-    .unwrap();
+    let args: Vec<_> = env::args().collect();
+    if args.len() < 3 {
+        println!("Usage: {} <pictures' dir> <output file>", args[0]);
+        process::exit(-1);
+    }
+    let input_dir = &args[1];
+    let output_file = &args[2];
+    let dir = fs::read_dir(input_dir).unwrap();
+    let mut z = Box::new(0.0);
+    let mut object = Box::new(Object::new());
+    dir.for_each(|file| {
+        let img = image::open(file.unwrap().path()).unwrap();
+        let mut jpg = Jpg::new(img);
+        jpg.remove_noise(NOISE_CANCEL_COVER_COUNT, NOISE_CANCEL_ITERATION);
+        let coords = jpg.get_xy_coords(*z);
+        (*object).stack_layer(coords);
+        *z += STEP;
+    });
+    (*object).export(output_file.to_owned());
 }

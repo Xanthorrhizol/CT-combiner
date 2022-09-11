@@ -27,6 +27,7 @@ pub struct Jpg {
     pub blue: Vec<u8>,
     pub light: Vec<u8>,
     pub binary: Vec<bool>,
+    pub boundary: Vec<bool>,
 }
 impl Jpg {
     pub fn new(img: image::DynamicImage) -> Jpg {
@@ -65,8 +66,10 @@ impl Jpg {
             blue,
             light,
             binary: vec![],
+            boundary: vec![],
         };
         jpg.binary = jpg.get_binary();
+        jpg.boundary = jpg.get_boundary();
         jpg
     }
     pub fn export(&self, opt: &JpgOption) -> Vec<u8> {
@@ -100,6 +103,26 @@ impl Jpg {
         for y in 0..self.height {
             for x in 0..self.width {
                 if self.binary[self.get_index_from_xy(x, y)] {
+                    let red = (255.0 * opt.brightness * opt.red).ceil() as u8;
+                    let green = (255.0 * opt.brightness * opt.green).ceil() as u8;
+                    let blue = (255.0 * opt.brightness * opt.blue).ceil() as u8;
+                    result.push(red);
+                    result.push(green);
+                    result.push(blue);
+                } else {
+                    for _ in 0..3 {
+                        result.push(0);
+                    }
+                }
+            }
+        }
+        result
+    }
+    pub fn export_boundary(&self, opt: &JpgOption) -> Vec<u8> {
+        let mut result: Vec<u8> = vec![];
+        for y in 0..self.height {
+            for x in 0..self.width {
+                if self.boundary[self.get_index_from_xy(x, y)] {
                     let red = (255.0 * opt.brightness * opt.red).ceil() as u8;
                     let green = (255.0 * opt.brightness * opt.green).ceil() as u8;
                     let blue = (255.0 * opt.brightness * opt.blue).ceil() as u8;
@@ -160,11 +183,16 @@ impl Jpg {
             self.binary = result;
         }
     }
-    pub fn get_xy_coords(&self, z: f32) -> Vec<[f32; 3]> {
+    pub fn get_xy_coords(&self, z: f32, use_boundary: bool) -> Vec<[f32; 3]> {
         let mut result: Vec<[f32; 3]> = vec![];
         let mut i = 0;
-        for binary in self.binary.iter() {
-            if *binary {
+        let target = if use_boundary {
+            &self.boundary
+        } else {
+            &self.binary
+        };
+        for filled in target.iter() {
+            if *filled {
                 let (x, y) = self.get_xy_from_index(i);
                 result.push([x as f32, z, y as f32]);
             }
@@ -187,6 +215,34 @@ impl Jpg {
                 }
             }
         }
+        result
+    }
+    fn get_boundary(&self) -> Vec<bool> {
+        let mut result: Vec<bool> = vec![];
+        let mut temp = self.binary[0];
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let filled = self.binary[self.get_index_from_xy(x, y)];
+                if temp != filled {
+                    temp = filled;
+                    result.push(true);
+                } else {
+                    result.push(false);
+                }
+            }
+        }
+
+        temp = self.binary[0];
+        for x in 0..self.width {
+            for y in 0..self.height {
+                let filled = self.binary[self.get_index_from_xy(x, y)];
+                if temp != filled {
+                    temp = filled;
+                    result[self.get_index_from_xy(x, y)] = true;
+                }
+            }
+        }
+
         result
     }
     fn get_index_from_xy(&self, x: u32, y: u32) -> usize {

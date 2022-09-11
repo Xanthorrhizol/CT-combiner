@@ -10,12 +10,26 @@ const STEP: f32 = 4.0;
 
 fn main() {
     let args: Vec<_> = env::args().collect();
-    if args.len() < 3 {
-        println!("Usage: {} <pictures' dir> <output file>", args[0]);
+    if args.len() < 4 {
+        println!(
+            "Usage: {} <pictures' dir> <output file> <use_boundary(y|n)>",
+            args[0]
+        );
         process::exit(-1);
     }
     let input_dir = &args[1];
     let output_file = &args[2];
+    let use_boundary = match (&args[3]).to_string().as_str() {
+        "y" | "Y" => true,
+        "n" | "N" => false,
+        _ => {
+            println!(
+                "Usage: {} <pictures' dir> <output file> <use_boundary(y|n)>",
+                args[0]
+            );
+            process::exit(-1);
+        }
+    };
     let dir = fs::read_dir(input_dir).unwrap();
     let mut z = Box::new(0.0);
     let mut object = Box::new(Object::new());
@@ -23,7 +37,7 @@ fn main() {
         let img = image::open(file.unwrap().path()).unwrap();
         let mut jpg = Jpg::new(img);
         jpg.remove_noise(NOISE_CANCEL_COVER_COUNT, NOISE_CANCEL_ITERATION);
-        let coords = jpg.get_xy_coords(*z);
+        let coords = jpg.get_xy_coords(*z, use_boundary);
         (*object).stack_layer(coords);
         *z += STEP;
     });

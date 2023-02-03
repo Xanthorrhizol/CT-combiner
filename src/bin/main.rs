@@ -6,7 +6,8 @@ use std::process;
 
 const NOISE_CANCEL_COVER_COUNT: u32 = 2;
 const NOISE_CANCEL_ITERATION: u32 = 4;
-const STEP: f32 = 4.0;
+const DOTS_PER_MM: u32 = 2; // TODO: get this data from CD
+const Z_STEP: f32 = 2.0 * (DOTS_PER_MM as f32); // CT's distance btw each pictures is 2mm
 
 fn main() {
     let args: Vec<_> = env::args().collect();
@@ -39,7 +40,7 @@ fn main() {
         jpg.remove_noise(NOISE_CANCEL_COVER_COUNT, NOISE_CANCEL_ITERATION);
         let coords = jpg.get_xy_coords(*z, use_boundary);
         (*object).stack_layer(coords);
-        *z += STEP;
+        *z += Z_STEP;
     });
     (*object).export(output_file.to_owned());
 }
